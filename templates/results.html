@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scan Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">Scan complete</p>
+          <h1>Security Report</h1>
+        </div>
+        <a class="secondary-link" href="{{ url_for('index') }}">Run another scan</a>
+      </section>
+
+      {% if warnings %}
+        <div class="notice warning">
+          {% for warning in warnings %}
+            <p>{{ warning }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <section class="summary">
+        <div>
+          <span>Target</span>
+          <strong>{{ report.target }}</strong>
+        </div>
+        <div>
+          <span>Items scanned</span>
+          <strong>{{ report.scanned_files }}</strong>
+        </div>
+        <div>
+          <span>Findings</span>
+          <strong>{{ report.total_findings }}</strong>
+        </div>
+      </section>
+
+      <section class="actions">
+        <form action="{{ url_for('download_json') }}" method="post">
+          <button type="submit">Download JSON</button>
+        </form>
+        <form action="{{ url_for('download_text') }}" method="post">
+          <button type="submit" class="outline">Download text</button>
+        </form>
+      </section>
+
+      {% if report.total_findings == 0 %}
+        <section class="empty-state">
+          <h2>No issues found</h2>
+          <p>The scanned content did not match the current detection rules.</p>
+        </section>
+      {% endif %}
+
+      <section class="results-list">
+        {% for file in report.files %}
+          <article class="result-block">
+            <header>
+              <h2>{{ file.file_path }}</h2>
+              <p>Score {{ file.score }} | {{ file.risk_level }} risk | {{ file.findings|length }} findings</p>
+            </header>
+
+            {% if file.findings %}
+              <div class="findings-table">
+                <div class="table-heading">
+                  <span>Line</span>
+                  <span>Severity</span>
+                  <span>Issue</span>
+                  <span>Message</span>
+                </div>
+                {% for finding in file.findings %}
+                  <div class="finding-row">
+                    <span>{{ finding.line_number }}</span>
+                    <span class="severity severity-{{ finding.severity|lower }}">{{ finding.severity }}</span>
+                    <span>{{ finding.issue_type }}</span>
+                    <span>{{ finding.message }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="clean">No findings for this item.</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </section>
+    </main>
+  </body>
+</html>

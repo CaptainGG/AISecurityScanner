@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI Code Security Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="intro">
+        <div>
+          <p class="eyebrow">Local security check</p>
+          <h1>AI Code Security Scanner</h1>
+          <p class="lede">Paste code or upload files to check for exposed secrets, risky Python calls, and sensitive AI prompt notes.</p>
+        </div>
+        <img class="intro-image" src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=480&q=80" alt="Code editor on a laptop screen">
+      </section>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="notice">
+            {% for message in messages %}
+              <p>{{ message }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form class="scanner-form" action="{{ url_for('scan') }}" method="post" enctype="multipart/form-data">
+        <div class="field-row">
+          <label for="pasted_suffix">Pasted content type</label>
+          <select id="pasted_suffix" name="pasted_suffix">
+            {% for suffix in supported_choices %}
+              <option value="{{ suffix }}">{{ suffix }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <label for="pasted_code">Paste code or text</label>
+        <textarea id="pasted_code" name="pasted_code" rows="14" placeholder="Paste AI-generated code, markdown notes, JSON, or environment content here..."></textarea>
+
+        <label for="files">Upload files</label>
+        <input id="files" name="files" type="file" multiple accept=".py,.json,.env,.txt,.md">
+        <p class="hint">Supported files: .py, .json, .env, .txt, .md. Uploaded content is scanned in memory.</p>
+
+        <button type="submit">Scan content</button>
+      </form>
+    </main>
+  </body>
+</html>
