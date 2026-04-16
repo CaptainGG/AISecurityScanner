@@ -48,6 +48,91 @@
         </form>
       </section>
 
+      <section class="dashboard">
+        <div class="dashboard-panel severity-panel">
+          <div>
+            <h2>Severity mix</h2>
+            <p class="hint">Findings grouped by impact.</p>
+          </div>
+          {% if analytics.has_findings %}
+            <div class="donut-wrap">
+              <div class="donut" style="{{ analytics.severity_donut_style }}">
+                <span>{{ report.total_findings }}</span>
+              </div>
+              <div class="legend-list">
+                {% for item in analytics.severity_items %}
+                  <div class="legend-item">
+                    <span class="legend-swatch" style="background: {{ item.color }}"></span>
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.count }}</strong>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <p class="clean-dashboard">No findings to chart.</p>
+          {% endif %}
+        </div>
+
+        <div class="dashboard-panel">
+          <h2>Issue categories</h2>
+          {% if analytics.category_items %}
+            <div class="bar-list">
+              {% for item in analytics.category_items %}
+                <div class="bar-row">
+                  <div class="bar-label">
+                    <span>{{ item.label }}</span>
+                    <strong>{{ item.count }}</strong>
+                  </div>
+                  <div class="bar-track">
+                    <span class="bar-fill" style="width: {{ item.percent }}%"></span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="clean-dashboard">No categories found.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="dashboard dashboard-secondary">
+        <div class="dashboard-panel">
+          <h2>Top risky files</h2>
+          {% if analytics.top_files %}
+            <div class="bar-list">
+              {% for file in analytics.top_files %}
+                <div class="bar-row">
+                  <div class="bar-label">
+                    <span>{{ file.file_path }}</span>
+                    <strong>{{ file.score }} pts</strong>
+                  </div>
+                  <div class="bar-track">
+                    <span class="bar-fill file-fill" style="width: {{ file.percent }}%"></span>
+                  </div>
+                  <p class="microcopy">{{ file.risk_level }} risk | {{ file.finding_count }} findings</p>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="clean-dashboard">No risky files ranked.</p>
+          {% endif %}
+        </div>
+
+        <div class="dashboard-panel">
+          <h2>Risk mix</h2>
+          <div class="risk-mix">
+            {% for item in analytics.risk_items %}
+              <div class="risk-pill risk-pill-{{ item.label|lower }}">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.count }}</strong>
+                <small>{{ item.percent }}%</small>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
       {% if report.total_findings == 0 %}
         <section class="empty-state">
           <h2>No issues found</h2>

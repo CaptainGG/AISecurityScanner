@@ -12,6 +12,7 @@ from flask import Flask, Response, flash, redirect, render_template, request, se
 from scanner.engine import build_text_report, scan_github_repository
 from utils.file_loader import SUPPORTED_EXTENSIONS
 from utils.github_loader import GitHubRepositoryError
+from utils.report_analytics import build_report_analytics, validate_report
 from utils.reporter import format_text_report
 
 
@@ -55,6 +56,18 @@ def _store_report(report: dict[str, Any]) -> None:
     report_id = uuid4().hex
     REPORT_CACHE[report_id] = report
     session["latest_report_id"] = report_id
+
+
+def _render_results(report: dict[str, Any], warnings: list[str] | None = None) -> str:
+    """Store and render a report with visualization analytics."""
+    _store_report(report)
+    analytics = build_report_analytics(report)
+    return render_template(
+        "results.html",
+        report=report,
+        analytics=analytics,
+        warnings=warnings or [],
+    )
 
 
 @app.get("/")
@@ -131,9 +144,28 @@ def scan() -> str:
             "files": github_report["files"] + report["files"],
         }
 
-    _store_report(report)
+    return _render_results(report, warnings=warnings)
 
-    return render_template("results.html", report=report, warnings=warnings)
+
+@app.post("/visualize-json")
+def visualize_json() -> str:
+    """Render visualizations for a previously exported JSON report."""
+    report_file = request.files.get("report_json")
+    if not report_file or not report_file.filename:
+        flash("Upload a scanner JSON report to visualize.")
+        return redirect(url_for("index"))
+
+    try:
+        report = json.loads(report_file.read().decode("utf-8", errors="replace"))
+        validate_report(report)
+    except json.JSONDecodeError:
+        flash("The uploaded file is not valid JSON.")
+        return redirect(url_for("index"))
+    except ValueError as exc:
+        flash(str(exc))
+        return redirect(url_for("index"))
+
+    return _render_results(report, warnings=["Loaded visualization from JSON report."])
 
 
 @app.post("/download/json")

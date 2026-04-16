@@ -13,6 +13,7 @@ AI coding assistants can speed up development, but generated files may accidenta
 - Detects likely hardcoded secrets, risky Python functions, and prompt leak indicators.
 - Prints a readable terminal report.
 - Exports downloadable JSON and text reports.
+- Visualizes exported JSON reports with a local dashboard.
 - Uses a simple file-level risk score: Low, Medium, or High.
 - Keeps uploaded browser content in memory instead of saving source files.
 
@@ -86,6 +87,8 @@ http://127.0.0.1:5000
 
 From the web interface, you can paste code, upload one or more supported files, enter a public GitHub repository URL, review findings, and download either a JSON or plain-text report.
 
+You can also upload a previously exported `report.json` from the homepage to reopen the dashboard without rescanning code.
+
 ## Sample Output
 
 ```text
@@ -158,11 +161,13 @@ ai-code-security-scanner/
 |-- utils/
 |   |-- file_loader.py
 |   |-- github_loader.py
+|   |-- report_analytics.py
 |   `-- reporter.py
 |-- tests/
 |   |-- test_file_loader.py
 |   |-- test_engine_text.py
 |   |-- test_github_loader.py
+|   |-- test_report_analytics.py
 |   |-- test_secrets.py
 |   |-- test_risks.py
 |   |-- test_prompt_leak.py

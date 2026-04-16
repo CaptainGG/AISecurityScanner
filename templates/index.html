@@ -50,6 +50,19 @@
 
         <button type="submit">Scan content</button>
       </form>
+
+      <section class="json-visualizer">
+        <div>
+          <p class="eyebrow">Report replay</p>
+          <h2>Visualize an exported JSON report</h2>
+          <p class="hint">Upload a previous scanner report to see the dashboard again without rescanning code.</p>
+        </div>
+        <form action="{{ url_for('visualize_json') }}" method="post" enctype="multipart/form-data">
+          <label for="report_json">JSON report</label>
+          <input id="report_json" name="report_json" type="file" accept=".json,application/json">
+          <button type="submit" class="outline">Visualize JSON</button>
+        </form>
+      </section>
     </main>
   </body>
 </html>

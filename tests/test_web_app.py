@@ -1,3 +1,6 @@
+import json
+from io import BytesIO
+
 from web_app import _is_supported_name, _suffix_for_name, app
 
 
@@ -31,3 +34,64 @@ def test_scan_route_accepts_github_url(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert b"Security Report" in response.data
+
+
+def test_visualize_json_upload_renders_dashboard() -> None:
+    report = {
+        "target": "uploaded",
+        "scanned_files": 1,
+        "total_findings": 1,
+        "files": [
+            {
+                "file_path": "app.py",
+                "score": 3,
+                "risk_level": "Low",
+                "findings": [
+                    {
+                        "line_number": 1,
+                        "category": "risky_function",
+                        "issue_type": "eval()",
+                        "severity": "Medium",
+                        "message": "Use of eval() can execute untrusted code.",
+                    }
+                ],
+            }
+        ],
+    }
+
+    client = app.test_client()
+    response = client.post(
+        "/visualize-json",
+        data={"report_json": (BytesIO(json.dumps(report).encode("utf-8")), "report.json")},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    assert b"Severity mix" in response.data
+    assert b"Risky functions" in response.data
+
+
+def test_visualize_json_rejects_malformed_json() -> None:
+    client = app.test_client()
+    response = client.post(
+        "/visualize-json",
+        data={"report_json": (BytesIO(b"{not-json"), "report.json")},
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"The uploaded file is not valid JSON." in response.data
+
+
+def test_visualize_json_rejects_wrong_shape() -> None:
+    client = app.test_client()
+    response = client.post(
+        "/visualize-json",
+        data={"report_json": (BytesIO(b'{"target": "bad"}'), "report.json")},
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"JSON report is missing required scanner fields." in response.data
