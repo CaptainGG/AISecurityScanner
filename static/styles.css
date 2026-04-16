@@ -96,6 +96,7 @@ label {
 
 select,
 textarea,
+input[type="url"],
 input[type="file"] {
   width: 100%;
   border: 1px solid var(--line);
@@ -119,6 +120,10 @@ textarea {
 }
 
 input[type="file"] {
+  padding: 12px;
+}
+
+input[type="url"] {
   padding: 12px;
 }
 

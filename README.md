@@ -7,6 +7,7 @@ AI coding assistants can speed up development, but generated files may accidenta
 ## Features
 
 - Scan one file or a whole directory recursively.
+- Scan a public GitHub repository by URL.
 - Paste code or upload files in a local browser UI.
 - Supports `.py`, `.json`, `.env`, `.txt`, and `.md` files.
 - Detects likely hardcoded secrets, risky Python functions, and prompt leak indicators.
@@ -51,6 +52,24 @@ Print only a compact summary:
 python main.py scan . --quiet
 ```
 
+Scan a public GitHub repository:
+
+```bash
+python main.py scan-repo https://github.com/owner/repo
+```
+
+Scan a specific branch:
+
+```bash
+python main.py scan-repo https://github.com/owner/repo/tree/main
+```
+
+Write a JSON report for a GitHub repository:
+
+```bash
+python main.py scan-repo https://github.com/owner/repo --json report.json
+```
+
 ## Web Usage
 
 Start the local Flask app:
@@ -65,7 +84,7 @@ Open the app in your browser:
 http://127.0.0.1:5000
 ```
 
-From the web interface, you can paste code, upload one or more supported files, scan them in memory, review findings, and download either a JSON or plain-text report.
+From the web interface, you can paste code, upload one or more supported files, enter a public GitHub repository URL, review findings, and download either a JSON or plain-text report.
 
 ## Sample Output
 
@@ -138,12 +157,16 @@ ai-code-security-scanner/
 |   `-- styles.css
 |-- utils/
 |   |-- file_loader.py
+|   |-- github_loader.py
 |   `-- reporter.py
 |-- tests/
+|   |-- test_file_loader.py
 |   |-- test_engine_text.py
+|   |-- test_github_loader.py
 |   |-- test_secrets.py
 |   |-- test_risks.py
-|   `-- test_prompt_leak.py
+|   |-- test_prompt_leak.py
+|   `-- test_web_app.py
 |-- requirements.txt
 |-- README.md
 `-- .gitignore
@@ -173,11 +196,12 @@ pytest
 
 This is an educational, regex-based scanner. It can miss real secrets and can also produce false positives. It does not replace mature tools such as secret scanners, SAST tools, dependency scanners, or manual security review.
 
-The scanner does not modify files, auto-fix issues, install Git hooks, or parse Python with the AST. The web interface is designed for local use and does not include user accounts, persistent scan history, or production deployment settings.
+GitHub repository scanning supports public repositories only. It downloads temporary ZIP archives, scans supported files, and deletes the temporary source afterward. The scanner does not modify files, auto-fix issues, install Git hooks, or parse Python with the AST. The web interface is designed for local use and does not include user accounts, persistent scan history, or production deployment settings.
 
 ## Future Improvements
 
 - Add optional configuration for ignored files and rules.
+- Add private GitHub repository support with `GITHUB_TOKEN`.
 - Add entropy-based secret detection.
 - Add Git pre-commit hook support.
 - Export SARIF for GitHub code scanning.

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+from uuid import uuid4
 from typing import Any
 
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
 
-from scanner.engine import build_text_report
+from scanner.engine import build_text_report, scan_github_repository
 from utils.file_loader import SUPPORTED_EXTENSIONS
+from utils.github_loader import GitHubRepositoryError
 from utils.reporter import format_text_report
 
 
@@ -18,6 +20,7 @@ app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "local-development-only")
 
 SUPPORTED_CHOICES = [".py", ".json", ".env", ".txt", ".md"]
+REPORT_CACHE: dict[str, dict[str, Any]] = {}
 
 
 def _is_supported_name(file_name: str) -> bool:
@@ -40,11 +43,18 @@ def _suffix_for_name(file_name: str) -> str:
 
 
 def _load_report() -> dict[str, Any] | None:
-    """Load the latest report from the browser session."""
-    raw_report = session.get("latest_report")
-    if not raw_report:
+    """Load the latest report from the local in-memory cache."""
+    report_id = session.get("latest_report_id")
+    if not report_id:
         return None
-    return json.loads(raw_report)
+    return REPORT_CACHE.get(report_id)
+
+
+def _store_report(report: dict[str, Any]) -> None:
+    """Store a report for download without putting large JSON in a cookie."""
+    report_id = uuid4().hex
+    REPORT_CACHE[report_id] = report
+    session["latest_report_id"] = report_id
 
 
 @app.get("/")
@@ -58,6 +68,7 @@ def scan() -> str:
     """Scan pasted code and uploaded files in memory."""
     items: list[dict[str, str]] = []
     warnings: list[str] = []
+    github_url = request.form.get("github_url", "").strip()
     pasted_code = request.form.get("pasted_code", "")
     pasted_suffix = request.form.get("pasted_suffix", ".py")
 
@@ -92,16 +103,35 @@ def scan() -> str:
             }
         )
 
-    if not items:
-        flash("Paste code or upload at least one supported file to scan.")
+    github_report: dict[str, Any] | None = None
+    if github_url:
+        try:
+            github_report = scan_github_repository(github_url)
+        except GitHubRepositoryError as exc:
+            flash(str(exc))
+            return redirect(url_for("index"))
+
+    if not items and github_report is None:
+        flash("Paste code, upload a supported file, or enter a GitHub repository URL.")
         return redirect(url_for("index"))
 
-    target = "pasted code"
-    if len(items) > 1 or not items[0]["label"].startswith("pasted-code"):
-        target = "web upload"
+    if items:
+        target = "pasted code"
+        if len(items) > 1 or not items[0]["label"].startswith("pasted-code"):
+            target = "web upload"
+        report = build_text_report(target=target, items=items)
+    else:
+        report = github_report or build_text_report(target="web upload", items=[])
 
-    report = build_text_report(target=target, items=items)
-    session["latest_report"] = json.dumps(report)
+    if github_report and items:
+        report = {
+            "target": "web scan",
+            "scanned_files": github_report["scanned_files"] + report["scanned_files"],
+            "total_findings": github_report["total_findings"] + report["total_findings"],
+            "files": github_report["files"] + report["files"],
+        }
+
+    _store_report(report)
 
     return render_template("results.html", report=report, warnings=warnings)
 

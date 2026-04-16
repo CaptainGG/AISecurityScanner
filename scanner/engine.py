@@ -10,6 +10,7 @@ from scanner.risks import detect_risky_code
 from scanner.scoring import score_findings
 from scanner.secrets import detect_secrets
 from utils.file_loader import collect_supported_files, read_text_lines
+from utils.github_loader import MAX_REPO_FILES, GitHubRepositoryError, downloaded_github_repository
 
 
 def scan_text(label: str, content: str, suffix: str, file_name: str | None = None) -> dict[str, Any]:
@@ -54,19 +55,28 @@ def build_text_report(target: str, items: list[dict[str, str]]) -> dict[str, Any
     }
 
 
-def scan_path(target: Path) -> dict[str, Any]:
+def scan_path(
+    target: Path,
+    report_target: str | None = None,
+    display_root: Path | None = None,
+    max_files: int | None = None,
+) -> dict[str, Any]:
     """Scan a file or directory and return a structured report."""
     if not target.exists():
         raise FileNotFoundError(f"path does not exist: {target}")
 
-    files = collect_supported_files(target)
+    files = collect_supported_files(target, max_files=max_files)
     file_reports: list[dict[str, Any]] = []
     total_findings = 0
 
     for file_path in files:
+        label = str(file_path)
+        if display_root is not None:
+            label = str(file_path.relative_to(display_root))
+
         lines = read_text_lines(file_path)
         file_report = scan_text(
-            label=str(file_path),
+            label=label,
             content="\n".join(lines),
             suffix=file_path.suffix.lower(),
             file_name=file_path.name,
@@ -77,8 +87,22 @@ def scan_path(target: Path) -> dict[str, Any]:
             file_reports.append(file_report)
 
     return {
-        "target": str(target),
+        "target": report_target or str(target),
         "scanned_files": len(files),
         "total_findings": total_findings,
         "files": file_reports,
     }
+
+
+def scan_github_repository(repo_url: str) -> dict[str, Any]:
+    """Download and scan a public GitHub repository URL."""
+    try:
+        with downloaded_github_repository(repo_url) as repo_path:
+            return scan_path(
+                repo_path,
+                report_target=repo_url,
+                display_root=repo_path,
+                max_files=MAX_REPO_FILES,
+            )
+    except ValueError as exc:
+        raise GitHubRepositoryError(str(exc)) from exc

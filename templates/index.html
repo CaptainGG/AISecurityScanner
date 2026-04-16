@@ -12,7 +12,7 @@
         <div>
           <p class="eyebrow">Local security check</p>
           <h1>AI Code Security Scanner</h1>
-          <p class="lede">Paste code or upload files to check for exposed secrets, risky Python calls, and sensitive AI prompt notes.</p>
+          <p class="lede">Paste code, upload files, or scan a public GitHub repository for exposed secrets, risky Python calls, and sensitive AI prompt notes.</p>
         </div>
         <img class="intro-image" src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=480&q=80" alt="Code editor on a laptop screen">
       </section>
@@ -28,6 +28,10 @@
       {% endwith %}
 
       <form class="scanner-form" action="{{ url_for('scan') }}" method="post" enctype="multipart/form-data">
+        <label for="github_url">GitHub repository URL</label>
+        <input id="github_url" name="github_url" type="url" placeholder="https://github.com/owner/repo">
+        <p class="hint">Public repositories only. Branch URLs like https://github.com/owner/repo/tree/main are supported.</p>
+
         <div class="field-row">
           <label for="pasted_suffix">Pasted content type</label>
           <select id="pasted_suffix" name="pasted_suffix">
