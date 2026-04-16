@@ -199,7 +199,7 @@ pytest
 
 ## Limitations
 
-This is an educational, regex-based scanner. It can miss real secrets and can also produce false positives. It does not replace mature tools such as secret scanners, SAST tools, dependency scanners, or manual security review.
+This is an educational, regex-based scanner. It does not replace mature tools such as secret scanners, SAST tools, dependency scanners, or manual security review.
 
 GitHub repository scanning supports public repositories only. It downloads temporary ZIP archives, scans supported files, and deletes the temporary source afterward. The scanner does not modify files, auto-fix issues, install Git hooks, or parse Python with the AST. The web interface is designed for local use and does not include user accounts, persistent scan history, or production deployment settings.
 
